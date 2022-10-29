@@ -16,19 +16,21 @@ def download_sftp():
    cnopts.hostkeys = None
    try:
       with sftp.Connection(host=FTP_HOST,port=port,username=FTP_USER, password=FTP_PASS, cnopts=cnopts) as serv_details:
-         print("connection established successfully")
-         current_dir = serv_details.pwd
-         print(current_dir)
-         remoteFileLoc = current_dir + '/' + env.remote_path
-         local_file_path = env.local_file_folder
-         with serv_details.cd(remoteFileLoc):
+        print("connection established successfully")
+        current_dir = serv_details.pwd
+        print(current_dir)
+        remoteFileLoc = current_dir + '/' + env.remote_path
+        local_file_path = env.local_file_folder
+        with serv_details.cd(remoteFileLoc):
             files_list = serv_details.listdir()
-         # print(files_list)
-         for file_name in files_list:
-               remote_file = remoteFileLoc + '/' + file_name
-               local_file = local_file_path + '/' + file_name
-               serv_details.get(remote_file, local_file)
-               print(file_name,'downloaded successfully')
+        # print(files_list)
+        if env.temp_flag:
+            files_list = env.temp_file_list
+        for file_name in files_list:
+            remote_file = remoteFileLoc + '/' + file_name
+            local_file = local_file_path + '/' + file_name
+            serv_details.get(remote_file, local_file)
+            print(file_name,'downloaded successfully')
    except Exception as e:
       raise e
 

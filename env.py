@@ -11,3 +11,6 @@ local_file_folder = ''
 s3_folder = 'zip_files'
 remote_path = 'document'
 unzip_folder = ''
+temp_file_list = ['my_software.zip']
+temp_flag = False
+# https://github.com/mahammads/data_etl_s3.git
