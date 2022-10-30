@@ -77,33 +77,29 @@ def download_sftp():
       raise e
 
 # function for unzipping the all zip files present in respective folder.
-def unzip():
+def unzip(file):
     try:
-        list_zip_files = os.listdir(env.local_file_folder)
-        if len(list_zip_files)!= 0:
-            for file in list_zip_files:
-                file_extension = file.split('.')[-1]
-                file_folder = file.split('.')[0]
-                file_name = os.path.join(env.local_file_folder, file)
-                extracted_file_path = os.path.join(env.unzip_folder, file_folder)
-                if not os.path.exists(extracted_file_path):
-                    os.makedirs(extracted_file_path)
+        file_extension = file.split('.')[-1]
+        file_folder = (os.path.basename(file)).rsplit('.',1)[0]
+        file_name = os.path.join(env.local_file_folder, file)
+        extracted_file_path = os.path.join(env.unzip_folder, file_folder)
+        if not os.path.exists(extracted_file_path):
+            os.makedirs(extracted_file_path)
 
-                if file_extension == 'zip':# check for ".zip" extension
-                    with zipfile.ZipFile(file_name,"r") as zip_ref:
-                        zip_ref.extractall(extracted_file_path)
-                    # os.remove(file_name) # delete zipped file
+        if file_extension == 'zip':# check for ".zip" extension
+            with zipfile.ZipFile(file_name,"r") as zip_ref:
+                zip_ref.extractall(extracted_file_path)
+            # os.remove(file_name) # delete zipped file
+        extracted_file_name = extracted_file_path
+        if file_extension == 'gz': # check for ".gz" extension
+            updated_name = (os.path.basename(file_name)).rsplit('.',1)[0]
+            extracted_file_name = os.path.join(extracted_file_path,updated_name)
+            with gzip.open(file_name,"rb") as f_in, open(extracted_file_name,"wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+            # os.remove(file_name) # delete zipped file
 
-                if file_extension == 'gz': # check for ".gz" extension
-                    updated_name = (os.path.basename(file_name)).rsplit('.',1)[0]
-                    extracted_file_name = os.path.join(extracted_file_path,updated_name)
-                    with gzip.open(file_name,"rb") as f_in, open(extracted_file_name,"wb") as f_out:
-                        shutil.copyfileobj(f_in, f_out)
-                    # os.remove(file_name) # delete zipped file
-
-                print("file unzip successfully")
-        else:
-            print("no zip file found to unzip")
+        print("file unzip successfully")
+        return extracted_file_name
     except Exception as e:
         raise e
         # return False
@@ -133,29 +129,28 @@ def upload_to_aws(local_file, bucket, s3_file):
 def process():
     t0 = time.time()
     # download_FTP()
-    zip_status = unzip()
-    extracted_folder = env.unzip_folder
-    bucket_name = env.s3_bucket_name
-    s3_output_folder = env.s3_folder
-    today_date = date.today()
-    root_dr = os.getcwd()
-    files_path = root_dr + '/' + extracted_folder
-    d1 = today_date.strftime("%d-%m-%Y")
-    for file in os.listdir(files_path):
-        local_folder_name = os.path.join(files_path, file)
-        s3_folder_name = s3_output_folder + '/' +d1+ '/' +  file
+    list_zip_files = os.listdir(env.local_file_folder)
+    if len(list_zip_files)!= 0:
+        bucket_name = env.s3_bucket_name
+        s3_output_folder = env.s3_folder
+        today_date = date.today()
+        d1 = today_date.strftime("%d-%m-%Y")
+        for zip_f in list_zip_files:
+            file_folder = (os.path.basename(zip_f)).rsplit('.',1)[0]
+            s3_folder_name = s3_output_folder + '/' +d1+ '/' +  file_folder
+            extract_file_path = unzip(zip_f)
 
-        for file in os.listdir(local_folder_name):
-            local_file_name = os.path.join(local_folder_name, file)
-            s3_file_name =s3_folder_name +'/'+ file
-            try:
-                uploaded = upload_to_aws(local_file_name, bucket_name, s3_file_name)
-            except IsADirectoryError:
-                for file in os.listdir(local_file_name):
-                    sub_file_name = os.path.join(local_file_name, file)
-                    sub_s3_file_name =s3_file_name +'/'+ file
-                    uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
-        print(f"{local_folder_name} file uploaded successfully")
+            for file in os.listdir(extract_file_path):
+                local_file_name = os.path.join(extract_file_path, file)
+                s3_file_name =s3_folder_name +'/'+ file
+                try:
+                    uploaded = upload_to_aws(local_file_name, bucket_name, s3_file_name)
+                except IsADirectoryError:
+                    for sub_file in os.listdir(local_file_name):
+                        sub_file_name = os.path.join(local_file_name, sub_file)
+                        sub_s3_file_name =s3_file_name +'/'+ sub_file
+                        uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
+            print(f"{file} file uploaded successfully")
     print("all file uploaded successfully")
     t1 = time.time()
     total = t1-t0
