@@ -23,7 +23,7 @@ port=port = env.port
 # function to get the file from ftp server.
 def getFile(ftp, filename):
     try:
-        local_file_path = env.local_file_folder +'/' + filename
+        local_file_path = env.root_folder + '/' + env.local_file_folder +'/' + filename
         ftp.retrbinary("RETR " + filename ,open(local_file_path, 'wb').write)
         return True
     except:
@@ -80,8 +80,8 @@ def unzip(file):
     try:
         file_extension = file.split('.')[-1]
         file_folder = (os.path.basename(file)).rsplit('.',1)[0]
-        file_name = os.path.join(env.local_file_folder, file)
-        extracted_file_path = os.path.join(env.unzip_folder, file_folder)
+        file_name = file
+        extracted_file_path = env.root_folder + '/' + env.unzip_folder + '/' + file_folder
         if not os.path.exists(extracted_file_path):
             os.makedirs(extracted_file_path)
 
@@ -89,16 +89,16 @@ def unzip(file):
             with zipfile.ZipFile(file_name,"r") as zip_ref:
                 zip_ref.extractall(extracted_file_path)
             os.remove(file_name) # delete zipped file
-        extracted_file_name = extracted_file_path
+
         if file_extension == 'gz': # check for ".gz" extension
             updated_name = (os.path.basename(file_name)).rsplit('.',1)[0]
-            extracted_file_name = os.path.join(extracted_file_path,updated_name)
-            with gzip.open(file_name,"rb") as f_in, open(extracted_file_name,"wb") as f_out:
+            gz_file_name = os.path.join(extracted_file_path,updated_name)
+            with gzip.open(file_name,"rb") as f_in, open(gz_file_name,"wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
             os.remove(file_name) # delete zipped file
 
         print(f"{file}file unzip successfully")
-        return extracted_file_name
+        return extracted_file_path
     except Exception as e:
         raise e
         # return False
@@ -128,16 +128,19 @@ def upload_to_aws(local_file, bucket, s3_file):
 def process():
     t0 = time.time()
     download_FTP()
-    list_zip_files = os.listdir(env.local_file_folder)
+    root_dir = env.root_folder
+    local_file_folder = os.path.join(root_dir,env.local_file_folder)
+    list_zip_files = os.listdir(local_file_folder)
     if len(list_zip_files)!= 0:
         bucket_name = env.s3_bucket_name
         s3_output_folder = env.s3_folder
         today_date = date.today()
         d1 = today_date.strftime("%d-%m-%Y")
         for zip_f in list_zip_files:
-            file_folder = (os.path.basename(zip_f)).rsplit('.',1)[0]
+            abs_file_path = os.path.join(local_file_folder, zip_f)
+            file_folder = (os.path.basename(abs_file_path)).rsplit('.',1)[0]
             s3_folder_name = s3_output_folder + '/' +d1+ '/' +  file_folder
-            extract_file_path = unzip(zip_f)
+            extract_file_path = unzip(abs_file_path)
 
             for file in os.listdir(extract_file_path):
                 local_file_name = os.path.join(extract_file_path, file)
