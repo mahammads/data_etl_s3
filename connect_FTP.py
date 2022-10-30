@@ -88,16 +88,16 @@ def unzip(file):
         if file_extension == 'zip':# check for ".zip" extension
             with zipfile.ZipFile(file_name,"r") as zip_ref:
                 zip_ref.extractall(extracted_file_path)
-            # os.remove(file_name) # delete zipped file
+            os.remove(file_name) # delete zipped file
         extracted_file_name = extracted_file_path
         if file_extension == 'gz': # check for ".gz" extension
             updated_name = (os.path.basename(file_name)).rsplit('.',1)[0]
             extracted_file_name = os.path.join(extracted_file_path,updated_name)
             with gzip.open(file_name,"rb") as f_in, open(extracted_file_name,"wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-            # os.remove(file_name) # delete zipped file
+            os.remove(file_name) # delete zipped file
 
-        print("file unzip successfully")
+        print(f"{file}file unzip successfully")
         return extracted_file_name
     except Exception as e:
         raise e
@@ -127,7 +127,7 @@ def upload_to_aws(local_file, bucket, s3_file):
 # consolidating all the funcitons.
 def process():
     t0 = time.time()
-    # download_FTP()
+    download_FTP()
     list_zip_files = os.listdir(env.local_file_folder)
     if len(list_zip_files)!= 0:
         bucket_name = env.s3_bucket_name
@@ -149,6 +149,7 @@ def process():
                         sub_file_name = os.path.join(local_file_name, sub_file)
                         sub_s3_file_name =s3_file_name +'/'+ sub_file
                         uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
+            shutil.rmtree(extract_file_path) # delete zipped file
             print(f"{file} file uploaded successfully")
     print("all file uploaded successfully")
     t1 = time.time()
