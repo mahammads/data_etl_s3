@@ -8,6 +8,8 @@ import zipfile
 from ftplib import FTP
 from urllib.parse import urlparse
 import time
+import gzip, shutil
+
 
 FTP_HOST =  env.host
 FTP_USER = env.user
@@ -80,15 +82,25 @@ def unzip():
         list_zip_files = os.listdir(env.local_file_folder)
         if len(list_zip_files)!= 0:
             for file in list_zip_files:
+                file_extension = file.split('.')[-1]
                 file_folder = file.split('.')[0]
-                print(file_folder)
                 file_name = os.path.join(env.local_file_folder, file)
-                with zipfile.ZipFile(file_name,"r") as zip_ref:
-                    extracted_file_path = os.path.join(env.unzip_folder, file_folder)
-                    if not os.path.exists(extracted_file_path):
-                        os.makedirs(extracted_file_path)
-                    zip_ref.extractall(extracted_file_path)
-                os.remove(file_name)
+                extracted_file_path = os.path.join(env.unzip_folder, file_folder)
+                if not os.path.exists(extracted_file_path):
+                    os.makedirs(extracted_file_path)
+
+                if file_extension == 'zip':# check for ".zip" extension
+                    with zipfile.ZipFile(file_name,"r") as zip_ref:
+                        zip_ref.extractall(extracted_file_path)
+                    # os.remove(file_name) # delete zipped file
+
+                if file_extension == 'gz': # check for ".gz" extension
+                    updated_name = (os.path.basename(file_name)).rsplit('.',1)[0]
+                    extracted_file_name = os.path.join(extracted_file_path,updated_name)
+                    with gzip.open(file_name,"rb") as f_in, open(extracted_file_name,"wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                    # os.remove(file_name) # delete zipped file
+
                 print("file unzip successfully")
         else:
             print("no zip file found to unzip")
@@ -120,7 +132,7 @@ def upload_to_aws(local_file, bucket, s3_file):
 # consolidating all the funcitons.
 def process():
     t0 = time.time()
-    download_FTP()
+    # download_FTP()
     zip_status = unzip()
     extracted_folder = env.unzip_folder
     bucket_name = env.s3_bucket_name

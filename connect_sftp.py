@@ -39,15 +39,17 @@ def unzip():
         list_zip_files = os.listdir(env.local_file_folder)
         if len(list_zip_files)!= 0:
             for file in list_zip_files:
+                file_extension = file.split('.')[-1]
                 file_folder = file.split('.')[0]
-                print(file_folder)
                 file_name = os.path.join(env.local_file_folder, file)
-                with zipfile.ZipFile(file_name,"r") as zip_ref:
-                    extracted_file_path = os.path.join(env.unzip_folder, file_folder)
-                    if not os.path.exists(extracted_file_path):
-                        os.makedirs(extracted_file_path)
-                    zip_ref.extractall(extracted_file_path)
-                os.remove(file_name)
+                extracted_file_path = os.path.join(env.unzip_folder, file_folder)
+                if not os.path.exists(extracted_file_path):
+                    os.makedirs(extracted_file_path)
+
+                if file_extension == '.zip':
+                    with zipfile.ZipFile(file_name,"r") as zip_ref:
+                        zip_ref.extractall(extracted_file_path)
+                # os.remove(file_name)
                 print("file unzip successfully")
         else:
             print("no zip file found to unzip")
