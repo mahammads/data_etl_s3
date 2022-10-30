@@ -35,7 +35,6 @@ def getFile(ftp, filename):
 def download_FTP():
     try:
         parsed = urlparse(FTP_HOST)
-        print(parsed)
         ftp = FTP(parsed.netloc)
         ftp.login(FTP_USER, FTP_PASS)
         ftp.cwd(parsed.path)
@@ -83,7 +82,7 @@ def unzip():
         if len(list_zip_files)!= 0:
             for file in list_zip_files:
                 file_extension = file.split('.')[-1]
-                file_folder = file.split('.')[0]
+                file_folder = (os.path.basename(file)).rsplit('.',1)[0]
                 file_name = os.path.join(env.local_file_folder, file)
                 extracted_file_path = os.path.join(env.unzip_folder, file_folder)
                 if not os.path.exists(extracted_file_path):
@@ -92,7 +91,7 @@ def unzip():
                 if file_extension == 'zip':# check for ".zip" extension
                     with zipfile.ZipFile(file_name,"r") as zip_ref:
                         zip_ref.extractall(extracted_file_path)
-                    # os.remove(file_name) # delete zipped file
+                    os.remove(file_name) # delete zipped file
 
                 if file_extension == 'gz': # check for ".gz" extension
                     updated_name = (os.path.basename(file_name)).rsplit('.',1)[0]
@@ -132,7 +131,7 @@ def upload_to_aws(local_file, bucket, s3_file):
 # consolidating all the funcitons.
 def process():
     t0 = time.time()
-    # download_FTP()
+    download_FTP()
     zip_status = unzip()
     extracted_folder = env.unzip_folder
     bucket_name = env.s3_bucket_name
@@ -155,6 +154,7 @@ def process():
                     sub_file_name = os.path.join(local_file_name, file)
                     sub_s3_file_name =s3_file_name +'/'+ file
                     uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
+        os.remove(local_folder_name)
         print(f"{local_folder_name} file uploaded successfully")
     print("all file uploaded successfully")
     t1 = time.time()
