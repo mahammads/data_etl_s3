@@ -35,7 +35,6 @@ def getFile(ftp, filename):
 def download_FTP():
     try:
         parsed = urlparse(FTP_HOST)
-        print(parsed)
         ftp = FTP(parsed.netloc)
         ftp.login(FTP_USER, FTP_PASS)
         ftp.cwd(parsed.path)
