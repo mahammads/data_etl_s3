@@ -54,13 +54,14 @@ def get_latest_File():
         
         filtered_files = file_table.loc[file_table['latest_files'] !='']
         output_table = filtered_files[['File_Name','Last_Modified_Date']]
-        print(output_table)
         latest_files = filtered_files['latest_files'].tolist()
         file_categories = [file.split('.')[0] for file in latest_files if file.endswith('.zip')]
-
-        return output_table
+        return output_table, file_categories
     except Exception as e:
         raise e
 
 # check_FTP_connection()
-get_latest_File()
+lat_files, cat = get_latest_File()
+print(lat_files)
+print(cat)
+

@@ -26,13 +26,13 @@ def getFile(ftp, filename):
         local_file_path = env.root_folder + '/' + env.local_file_folder +'/' + filename
         ftp.retrbinary("RETR " + filename ,open(local_file_path, 'wb').write)
         return True
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
         return False
      
 
 # function for donwloading all the files present in ftp server remote directory.
-def download_FTP():
+def download_FTP(file_name):
     try:
         parsed = urlparse(FTP_HOST)
         ftp = FTP(parsed.netloc)
@@ -40,10 +40,15 @@ def download_FTP():
         ftp.cwd(parsed.path)
         
         print("connection established successfully")
-        files_list = ftp.nlst()
+        # files_list = ftp.nlst()
         if env.temp_flag:
-            files_list = env.temp_file_list
-        for file_name in files_list:
+            file_name = env.temp_file_list
+
+        if isinstance(file_name, list):
+            for file_n in file_name:
+                getFile(ftp, file_n)
+                print(file_n,'downloaded successfully')
+        else:
             getFile(ftp, file_name)
             print(file_name,'downloaded successfully')
         return True
@@ -78,11 +83,11 @@ def download_sftp():
       raise e
 
 # function for unzipping the all zip files present in respective folder.
-def unzip(file):
+def unzip(file_name):
     try:
-        file_extension = file.split('.')[-1]
-        file_folder = (os.path.basename(file)).rsplit('.',1)[0]
-        file_name = file
+        file_extension = file_name.split('.')[-1]
+        file_folder = (os.path.basename(file_name)).rsplit('.',1)[0]
+
         extracted_file_path = env.root_folder + '/' + env.unzip_folder + '/' + file_folder
         if not os.path.exists(extracted_file_path):
             os.makedirs(extracted_file_path)
@@ -99,7 +104,7 @@ def unzip(file):
                 shutil.copyfileobj(f_in, f_out)
             os.remove(file_name) # delete zipped file
 
-        print(f"{file}file unzip successfully")
+        print(f"{file_name}file unzip successfully")
         return extracted_file_path
     except Exception as e:
         raise e
@@ -127,7 +132,8 @@ def upload_to_aws(local_file, bucket, s3_file):
         return False
 
 # consolidating all the funcitons.
-def process():
+def process(down_file_name):
+    download_FTP(down_file_name)
     t0 = time.time()
     root_dir = env.root_folder
     local_file_folder = os.path.join(root_dir,env.local_file_folder)
@@ -161,6 +167,6 @@ def process():
     print(f"total time taken: {total}")
 
 if __name__ == "__main__":
-    download_FTP()
-    process()
+    
+    process('CTLDA.N20221109.zip')
 
