@@ -9,7 +9,7 @@ from ftplib import FTP
 from urllib.parse import urlparse
 import time
 import gzip, shutil
-
+import threading
 
 FTP_HOST =  env.host
 FTP_USER = env.user
@@ -38,6 +38,7 @@ def download_FTP():
         ftp = FTP(parsed.netloc)
         ftp.login(FTP_USER, FTP_PASS)
         ftp.cwd(parsed.path)
+        
         print("connection established successfully")
         files_list = ftp.nlst()
         if env.temp_flag:
@@ -45,6 +46,7 @@ def download_FTP():
         for file_name in files_list:
             getFile(ftp, file_name)
             print(file_name,'downloaded successfully')
+        return True
     except Exception as e:
       raise e
 
@@ -127,7 +129,6 @@ def upload_to_aws(local_file, bucket, s3_file):
 # consolidating all the funcitons.
 def process():
     t0 = time.time()
-    download_FTP()
     root_dir = env.root_folder
     local_file_folder = os.path.join(root_dir,env.local_file_folder)
     list_zip_files = os.listdir(local_file_folder)
@@ -153,11 +154,13 @@ def process():
                         sub_s3_file_name =s3_file_name +'/'+ sub_file
                         uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
             shutil.rmtree(extract_file_path) # delete zipped file
-            print(f"{file} file uploaded successfully")
+            print(f"{extract_file_path} file uploaded successfully")
     print("all file uploaded successfully")
     t1 = time.time()
     total = t1-t0
     print(f"total time taken: {total}")
 
 if __name__ == "__main__":
+    download_FTP()
     process()
+
