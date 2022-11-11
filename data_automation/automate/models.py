@@ -4,8 +4,8 @@ from django.db import models
 class Last_run(models.Model):
     file_name =  models.CharField(max_length=100, null = False)
     last_modified_date =  models.DateTimeField()
-    is_complete = models.BooleanField()
     last_run_date = models.DateTimeField()
+    is_complete = models.BooleanField()
 
 
     def __str__(self):

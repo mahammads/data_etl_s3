@@ -11,14 +11,9 @@ import time
 import gzip, shutil
 import threading
 
-FTP_HOST =  env.host
-FTP_USER = env.user
-FTP_PASS = env.password
-
-sftp_host =  env.host
-sftp_user = env.user
-sftp_pw = env.password
-port=port = env.port
+# FTP_HOST =  env.host
+# FTP_USER = env.user
+# FTP_PASS = env.password
 
 # function to get the file from ftp server.
 def getFile(ftp, filename):
@@ -27,19 +22,13 @@ def getFile(ftp, filename):
         ftp.retrbinary("RETR " + filename ,open(local_file_path, 'wb').write)
         return True
     except Exception as e:
-        print(e)
-        return False
+        raise(e)
+
      
 
 # function for donwloading all the files present in ftp server remote directory.
-def download_FTP(file_name):
+def download_FTP(ftp,file_name):
     try:
-        parsed = urlparse(FTP_HOST)
-        ftp = FTP(parsed.netloc)
-        ftp.login(FTP_USER, FTP_PASS)
-        ftp.cwd(parsed.path)
-        
-        print("connection established successfully")
         # files_list = ftp.nlst()
         if env.temp_flag:
             file_name = env.temp_file_list
@@ -55,32 +44,6 @@ def download_FTP(file_name):
     except Exception as e:
       raise e
 
-# function for donwloading all the files present in sftp server remote directory.
-def download_sftp():
-   cnopts = sftp.CnOpts()
-   cnopts.hostkeys = None
-   try:
-      with sftp.Connection(host=sftp_host,port=port,username=sftp_user, password=sftp_pw, cnopts=cnopts) as serv_details:
-        print("connection established successfully")
-        current_dir = serv_details.pwd
-        print(current_dir)
-        remoteFileLoc = current_dir + '/' + env.remote_path
-        local_file_path = env.local_file_folder
-        with serv_details.cd(remoteFileLoc):
-            files_list = serv_details.listdir()
-        # print(files_list)
-        if env.temp_flag:
-            files_list = env.temp_file_list
-        for file_name in files_list:
-            remote_file = remoteFileLoc + '/' + file_name
-            local_file = local_file_path + '/' + file_name
-            download_status = serv_details.get(remote_file, local_file)
-            if download_status:
-                print(file_name,'downloaded successfully.')
-            else:
-                print("error in downloading file.")
-   except Exception as e:
-      raise e
 
 # function for unzipping the all zip files present in respective folder.
 def unzip(file_name):
@@ -132,41 +95,43 @@ def upload_to_aws(local_file, bucket, s3_file):
         return False
 
 # consolidating all the funcitons.
-def process(down_file_name):
-    download_FTP(down_file_name)
-    t0 = time.time()
-    root_dir = env.root_folder
-    local_file_folder = os.path.join(root_dir,env.local_file_folder)
-    list_zip_files = os.listdir(local_file_folder)
-    if len(list_zip_files)!= 0:
-        bucket_name = env.s3_bucket_name
-        s3_output_folder = env.s3_folder
-        today_date = date.today()
-        d1 = today_date.strftime("%d-%m-%Y")
-        for zip_f in list_zip_files:
-            abs_file_path = os.path.join(local_file_folder, zip_f)
-            file_folder = (os.path.basename(abs_file_path)).rsplit('.',1)[0]
-            s3_folder_name = s3_output_folder + '/' +d1+ '/' +  file_folder
-            extract_file_path = unzip(abs_file_path)
+def process(ftp, down_file_name):
+    try:
+        download_FTP(ftp, down_file_name)
+        t0 = time.time()
+        root_dir = env.root_folder
+        local_file_folder = os.path.join(root_dir,env.local_file_folder)
+        list_zip_files = os.listdir(local_file_folder)
+        if len(list_zip_files)!= 0:
+            bucket_name = env.s3_bucket_name
+            s3_output_folder = env.s3_folder
+            today_date = date.today()
+            d1 = today_date.strftime("%d-%m-%Y")
+            for zip_f in list_zip_files:
+                abs_file_path = os.path.join(local_file_folder, zip_f)
+                file_folder = (os.path.basename(abs_file_path)).rsplit('.',1)[0]
+                s3_folder_name = d1
+                extract_file_path = unzip(abs_file_path)
 
-            for file in os.listdir(extract_file_path):
-                local_file_name = os.path.join(extract_file_path, file)
-                s3_file_name =s3_folder_name +'/'+ file
-                try:
-                    uploaded = upload_to_aws(local_file_name, bucket_name, s3_file_name)
-                except IsADirectoryError:
-                    for sub_file in os.listdir(local_file_name):
-                        sub_file_name = os.path.join(local_file_name, sub_file)
-                        sub_s3_file_name =s3_file_name +'/'+ sub_file
-                        uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
-            shutil.rmtree(extract_file_path) # delete zipped file
-            print(f"{extract_file_path} file uploaded successfully")
-    print("all file uploaded successfully")
-    t1 = time.time()
-    total = t1-t0
-    print(f"total time taken: {total}")
-
+                for file in os.listdir(extract_file_path):
+                    local_file_name = os.path.join(extract_file_path, file)
+                    s3_file_name =s3_folder_name +'/'+ file
+                    try:
+                        uploaded = upload_to_aws(local_file_name, bucket_name, s3_file_name)
+                    except IsADirectoryError:
+                        for sub_file in os.listdir(local_file_name):
+                            sub_file_name = os.path.join(local_file_name, sub_file)
+                            sub_s3_file_name =s3_file_name +'/'+ sub_file
+                            uploaded = upload_to_aws(sub_file_name, bucket_name, sub_s3_file_name)
+                shutil.rmtree(extract_file_path) # delete zipped file
+                print(f"{extract_file_path} file uploaded successfully")
+        print("all file uploaded successfully")
+        t1 = time.time()
+        total = t1-t0
+        print(f"total time taken: {total}")
+        return True
+    except Exception as e:
+        raise e
 if __name__ == "__main__":
-    
-    process('CTLDA.N20221109.zip')
+    pass
 

@@ -7,12 +7,9 @@ from urllib.parse import urlparse
 from dateutil import parser
 import pandas as pd
 import numpy as np
+from connect_FTP import process
 
-FTP_HOST =  env.host
-FTP_USER = env.user
-FTP_PASS = env.password
-
-def check_FTP_connection():
+def check_FTP_connection(FTP_HOST,FTP_USER,FTP_PASS):
     try:
         parsed = urlparse(FTP_HOST)
         ftp = FTP(parsed.netloc)
@@ -25,12 +22,12 @@ def check_FTP_connection():
         return False
 
 
-def get_latest_File():
+def get_latest_File(FTP_HOST,FTP_USER,FTP_PASS):
     try:
         lines = []
         file_name= []
         last_modified = []
-        connection_status = check_FTP_connection()
+        connection_status = check_FTP_connection(FTP_HOST,FTP_USER,FTP_PASS)
         if not connection_status == False:
             ftp = connection_status
             parsed = urlparse(FTP_HOST)
@@ -53,15 +50,34 @@ def get_latest_File():
         file_table['latest_files'] = np.where((file_table['Last_Modified_Date'] > file_table['last_run_date']),file_table['File_Name'], '')
         
         filtered_files = file_table.loc[file_table['latest_files'] !='']
-        output_table = filtered_files[['File_Name','Last_Modified_Date']]
+        output_table = filtered_files[['File_Name','Last_Modified_Date','last_run_date']]
         latest_files = filtered_files['latest_files'].tolist()
-        file_categories = [file.split('.')[0] for file in latest_files if file.endswith('.zip')]
+        file_categories = [file.split('.')[0] for file in latest_files if (file.endswith('.zip') or file.endswith('.gz'))]
         return output_table, file_categories
     except Exception as e:
         raise e
 
-# check_FTP_connection()
-lat_files, cat = get_latest_File()
-print(lat_files)
-print(cat)
+def latest_run(host,user,password):
 
+    ftp = check_FTP_connection(host,user,password)
+    lat_files, present_cat = get_latest_File(host,user,password)
+   
+    lat_files['file_cat']  = np.where(lat_files['File_Name'].str.endswith('.zip')|lat_files['File_Name'].str.endswith('.gz'), lat_files['File_Name'].str.split(".",expand=True)[0], '')
+    filtered_cat = lat_files.loc[lat_files['file_cat'] !='']
+    get_input = input("please enter the expected categories seperated by ',' to process files: ")
+    if len(get_input)!=0:
+        user_input  = get_input.split(',')
+        user_input = [cat.strip() for cat in user_input]
+    else:
+        user_input = []
+    df_list = []
+    if not len(user_input) == 0:
+        for cat in user_input:
+            files_to_upload = filtered_cat.loc[filtered_cat['file_cat'] == cat]
+            df_list.append(files_to_upload)
+    final_df = pd.concat(df_list, ignore_index=True)
+    complete_status = process(ftp,file_name)
+    # print(lat_files)
+    # print(cat)
+
+latest_run(env.host,env.user,env.password)
