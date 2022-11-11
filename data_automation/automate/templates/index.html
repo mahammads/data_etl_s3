@@ -13,13 +13,13 @@
 <nav class="navbar navbar-inverse">
   <div class="container-fluid">
     <div class="navbar-header">
-      <a class="navbar-brand" href="#">Data Ingetion Tool</a>
+      <a class="navbar-brand" href="/home/">Data Ingetion Tool</a>
     </div>
     <ul class="nav navbar-nav">
-      <li class="active"><a href="#">Home</a></li>
+      <li class="active"><a href="/home/">Home</a></li>
 
-    <li><a href="#">SFTP</a></li>
-    <li><a href="#">AWS S3</a></li>
+    <li><a href="/get_sftp_cred/">SFTP</a></li>
+    <li><a href="/get_aws_cred/">AWS S3</a></li>
     <li><a href="#">CONFIG</a></li>
     <li><a href="#">RUN HISTORY</a></li>
 
@@ -30,10 +30,11 @@
     </ul>
   </div>
 </nav>
-  
+
 <div class="container">
-  <h3>Right Aligned Navbar</h3>
-  <p>The .navbar-right class is used to right-align navigation bar buttons.</p>
+  {% block index %}
+
+  {% endblock %} 
 </div>
 
 </body>

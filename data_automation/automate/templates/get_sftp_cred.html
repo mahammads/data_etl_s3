@@ -1,0 +1,36 @@
+{% extends 'index.html' %}
+{% block index %}
+    <h3>SFTP Connection</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class = "alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+<form action="/get_sftp_cred/" method="POST">
+    {% csrf_token %}   
+    <div class="form-group">
+        <label for="username">User Name:</label>
+        <input type="text" class="form-control" id="username" aria-describedby="glyphicon-user" name= "username" value ="{{ username }}" placeholder="User Name">
+    </div>
+    <div class="form-group">
+        <label for="hostname">Host:</label>
+        <input type="text" class="form-control" id="hostname" aria-describedby="glyphicon-user" name= "hostname" value ="{{ hostname }}" placeholder="Host ip/url">
+    </div>
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" class="form-control" id="password" name= "password" value ="{{ password }}" placeholder="Password">
+    </div>
+
+    <div class="form-group">
+        <label for="port">Port:</label>
+        <input type="text" class="form-control" id="port" name= "port" value ="{{ port }}" placeholder="Port">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+            
+{% endblock %} 

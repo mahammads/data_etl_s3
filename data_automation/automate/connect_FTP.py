@@ -2,7 +2,7 @@ import pysftp as sftp
 import os 
 import boto3
 from botocore.exceptions import NoCredentialsError
-import env
+from automate import env
 from datetime import date
 import zipfile
 from ftplib import FTP

@@ -5,4 +5,6 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name = 'index'),
+    path('home/', views.home, name = 'home'),
+    path('get_sftp_cred/', views.get_sftp_cred, name = 'get_sftp_cred'),
 ]

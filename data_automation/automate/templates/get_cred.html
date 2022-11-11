@@ -1,0 +1,26 @@
+{% extends 'index.html' %}
+{% block index %}
+<form>
+    <div class="form-group">
+    <label for="username">User Name:</label>
+    <input type="text" class="form-control" id="username" aria-describedby="glyphicon-user" placeholder="User Name">
+    </div>
+    <div class="form-group">
+      <label for="password">Password:</label>
+    <input type="password" class="form-control" id="password" placeholder="Password">
+    </div>
+    <div class="form-group">
+        <label for="access_key">Access Key:</label>
+      <input type="password" class="form-control" id="access_key" placeholder="Access Key">
+    </div>
+    <div class="form-group">
+        <label for="secre_key">Secret Key:</label>
+      <input type="password" class="form-control" id="secre_key" placeholder="Secret Key">
+    </div>
+    <div class="form-group">
+        <label for="s3bucket">S3 Bucket Name:</label>
+        <input type="text" class="form-control" id="s3bucket" aria-describedby="glyphicon-user" placeholder="User Name">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+{% endblock %} 

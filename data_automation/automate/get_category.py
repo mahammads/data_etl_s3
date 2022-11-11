@@ -1,13 +1,13 @@
 
 import os 
-import env
+from automate import env
 import datetime
 from ftplib import FTP
 from urllib.parse import urlparse
 from dateutil import parser
 import pandas as pd
 import numpy as np
-from connect_FTP import process
+from automate.connect_FTP import process
 
 def check_FTP_connection(FTP_HOST,FTP_USER,FTP_PASS):
     try:
@@ -15,7 +15,7 @@ def check_FTP_connection(FTP_HOST,FTP_USER,FTP_PASS):
         ftp = FTP(parsed.netloc)
         ftp.login(FTP_USER, FTP_PASS)
         ftp.cwd(parsed.path)
-        print("connection established successfully.")
+        # print("connection established successfully.")
         return ftp
     except:
         print("error while connecting FTP server.")
@@ -53,7 +53,8 @@ def get_latest_File(FTP_HOST,FTP_USER,FTP_PASS):
         output_table = filtered_files[['File_Name','Last_Modified_Date','last_run_date']]
         latest_files = filtered_files['latest_files'].tolist()
         file_categories = [file.split('.')[0] for file in latest_files if (file.endswith('.zip') or file.endswith('.gz'))]
-        return output_table, file_categories
+        uniq_cat = [*set(file_categories)]
+        return output_table, uniq_cat
     except Exception as e:
         raise e
 
@@ -61,7 +62,8 @@ def latest_run(host,user,password):
 
     ftp = check_FTP_connection(host,user,password)
     lat_files, present_cat = get_latest_File(host,user,password)
-   
+    
+    print(present_cat)   
     lat_files['file_cat']  = np.where(lat_files['File_Name'].str.endswith('.zip')|lat_files['File_Name'].str.endswith('.gz'), lat_files['File_Name'].str.split(".",expand=True)[0], '')
     filtered_cat = lat_files.loc[lat_files['file_cat'] !='']
     get_input = input("please enter the expected categories seperated by ',' to process files: ")
@@ -76,8 +78,9 @@ def latest_run(host,user,password):
             files_to_upload = filtered_cat.loc[filtered_cat['file_cat'] == cat]
             df_list.append(files_to_upload)
     final_df = pd.concat(df_list, ignore_index=True)
-    complete_status = process(ftp,file_name)
-    # print(lat_files)
-    # print(cat)
+    print(final_df)
+    return final_df
 
-latest_run(env.host,env.user,env.password)
+    # print(cat)
+if __name__ == "__main__":
+    pass
